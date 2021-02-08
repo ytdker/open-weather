@@ -1,44 +1,29 @@
-import React, { Component } from "react";
-import { GetCity } from "../Helpers";
+import React, { useState } from "react";
 import Results from "./Results";
 import Search from "./Search";
 
-export default class WeatherContainer extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            cities: []
-        }
-
-        this.searchHandling = this.searchHandling.bind(this);
-    }
-
-    searchHandling(data) {
-
-        var city = this.state.cities.find(c => c.id == data.id);
+const WeatherContainer = () => {
+    const [cities, setCities] = useState([]);
+    const searchHandling = (data) => {
+        var city = cities.find(c => c.id == data.id);
         if (city) {//Refresh data with the new response
             city = data;
         }
         else {
-            this.state.cities.push(data);
+            cities.push(data);
         }
-
-        this.setState((state) => ({ cities: state.cities }));
+        setCities(cities => [...cities]);
     }
 
-    render() {
-        return <div className="container">
-
-            <div className="header">
-                <h6>Odeon Weather</h6>
-            </div>
-
-            <div className="body">
-                <Search searchHandling={this.searchHandling} />
-                <Results cities={this.state.cities} />
-            </div>
+    return (<div className="container">
+        <div className="header">
+            <h6>Odeon Weather</h6>
         </div>
-    }
-
+        <div className="body">
+            <Search searchHandling={searchHandling} />
+            <Results cities={cities} />
+        </div>
+    </div>)
 }
+
+export default WeatherContainer
