@@ -1,47 +1,33 @@
-import React, { Component } from "react";
-import moment, { utc } from 'moment'
+import React, { useState } from "react";
+import moment from 'moment'
 import { GetCity } from "../Helpers";
 
-export default class Search extends Component {
-    constructor(props) {
-        super(props);
+const Search = (props) => {
+    let [state, setState] = useState({ errorMessage: null })
+    let search = null;
 
-        this.state = {
-
-        }
-
-        this.search = null;
-
-        this.onKeyEnter = this.onKeyEnter.bind(this);
-        this.onChangeCity = this.onChangeCity.bind(this);
-        this.onClickSearch = this.onClickSearch.bind(this);
-        this.clearInput = this.clearInput.bind(this);
-    }
-
-    onKeyEnter(e) {
+    const onKeyEnter = (e) => {
         if (e.which == 13) {//enter
             e.preventDefault();
-            this.onClickSearch();
+            onClickSearch();
         }
-
     }
 
-    onChangeCity(e) {
-        let val = e.target.value.trim();
-        this.search = val;
-
-        if (this.state.errorMessage)
-            this.setState({ errorMessage: null });
-
+    const onChangeCity = (e) => {
+        search = e.target.value.trim();
+        if (state.errorMessage)
+            setState(state => ({ ...state, errorMessage: null }));
     }
 
-    onClickSearch() {
-        if (!this.search) {
-            this.setState({ errorMessage: "Please enter a city name" })
+    const onClickSearch = () => {
+        if (!search) {
+            setState((state) => ({ ...state, errorMessage: "Please enter a city name" }));
         }
         else {
-            GetCity(this.search).then(
-                (data) => {
+            const fetchData = async () => {
+                try {
+                    let response = await GetCity(search);
+                    let data = response.data;
                     let result = {};
                     result.id = data.city.id;
                     result.city = data.city.name;
@@ -55,55 +41,50 @@ export default class Search extends Component {
                         result[time] = item.main.temp;
                     });
 
-                    this.props.searchHandling(result);
-                    this.clearInput();
-                },
-                (e) => {
-                    this.setState({ errorMessage: e.responseJSON.message });
+                    props.searchHandling(result);
+                    clearInput();
                 }
-            );
+                catch (e) {
+                    let errorText = e && e.response && e.response.data ? e.response.data.message : "An unexpected error has occurred"
+                    setState((state) => ({ ...state, errorMessage: errorText }));
+                }
+            }
+
+            fetchData();
         }
     }
 
-    clearInput() {
-        this.search = null;
+    const clearInput = () => {
+        search = null;
         Array.from(document.querySelectorAll("input")).forEach(
             input => (input.value = "")
         );
     }
 
-    render() {
-        return <div className="row">
-            <div className="col-8">
 
-                <div className="form-group">
-                    <input className="form-control form-control-sm" type="text" placeholder="City"
-                        onChange={this.onChangeCity} onKeyPress={this.onKeyEnter}
-                    />
-                </div>
-
+    return <div className="row">
+        <div className="col-8">
+            <div className="form-group">
+                <input className="form-control form-control-sm" type="text" placeholder="City"
+                    onChange={(e) => onChangeCity(e)} onKeyPress={onKeyEnter}
+                />
             </div>
+        </div>
 
-            <div className="col-4">
-                <div className="form-group">
-                    <button className="btn search-btn btn-primary" type="button"
-                        onClick={this.onClickSearch}>Search</button>
-                </div>
+        <div className="col-4">
+            <div className="form-group">
+                <button className="btn search-btn btn-primary" type="button"
+                    onClick={onClickSearch}>Search</button>
             </div>
-
-            {
-                this.state.errorMessage ?
-                    <ErrorMessage errorMessage={this.state.errorMessage} />
-                    : null
-            }
-
-        </div >
-    }
+        </div>
+        {state.errorMessage ? <ErrorMessage errorMessage={state.errorMessage} /> : null}
+    </div>
 }
-
 
 const ErrorMessage = (props) => <div className="col-12">
     <div className="form-group text-left">
         <p className="text-danger">{props.errorMessage}</p>
     </div>
 </div>
+
+export default Search
